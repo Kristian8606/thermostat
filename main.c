@@ -1,7 +1,7 @@
 /*
  * Thermostat with buttons
  * 
- * v0.4.1
+ * v0.4.5
  * 
  * Copyright 2018 José A. Jiménez (@RavenSystem)
  *  
@@ -52,7 +52,7 @@
 #define RESET_TIME              10000   / portTICK_PERIOD_MS
 
 #define POLL_PERIOD             15000
-uint8_t temp = 0, states;
+uint8_t temp = 0, states, pool_count= 0;
 uint32_t last_button_event_time, last_reset_event_time;
 float old_humidity_value = 0.0, old_temperature_value = 0.0;
 static ETSTimer thermostat_timer;
@@ -255,19 +255,26 @@ void temperature_sensor_task() {
        		printf("$%g\n",humidity_value);
       	    printf("*%d\n", temp);
       	    printf("#%d\n", states);
-        
+        	pool_count = 0;
     } else {
-   
+    
+   		pool_count++;
+   		
+   		if(pool_count >= 5){
         printf(">>> Sensor: ERROR\n");
 		printf("@%d\n", 0);
         led_code(LED_GPIO, SENSOR_ERROR);
+        pool_count = 0;
         
-        if (current_state.value.int_value != 0) {
-            current_state.value = HOMEKIT_UINT8(0);
-            homekit_characteristic_notify(&current_state, current_state.value);
+     	   if (current_state.value.int_value != 0) {
+        	    current_state.value = HOMEKIT_UINT8(0);
+            	homekit_characteristic_notify(&current_state, current_state.value);
             
-            relay_write(false);
+           	 relay_write(false);
+        	}
         }
+        
+       
     }
     
 }
@@ -310,7 +317,7 @@ homekit_accessory_t *accessories[] = {
             HOMEKIT_CHARACTERISTIC(MANUFACTURER, "Kristian"),
             &serial,
             HOMEKIT_CHARACTERISTIC(MODEL, "Thermostat"),
-            HOMEKIT_CHARACTERISTIC(FIRMWARE_REVISION, "0.4.4"),
+            HOMEKIT_CHARACTERISTIC(FIRMWARE_REVISION, "0.4.5"),
             HOMEKIT_CHARACTERISTIC(IDENTIFY, identify),
             NULL
         }),
